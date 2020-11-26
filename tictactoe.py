@@ -6,11 +6,25 @@ class TicTacToe(object):
         self.p1 = p1
         self.p2 = p2
 
+    def get_input(self, player):
+        while True:
+            row = input('Enter row: ')
+            col = input('Enter col: ')
+            try:
+                row = int(row)
+                col = int(col)
+
+                return row, col
+            except ValueError:
+                print("This is not a number. Enter a digit between 1-9")
+
     def turn(self, player):
         print(f'Player {str(player)} turn.')
-        row = input('Enter row: ')
-        col = input('Enter col: ')
-        return int(row), int(col)
+        while True:
+            row, col = self.get_input(player)
+            if self.board.move(row, col, player):
+                return
+            print('Input is invalid. Try again.')
 
     def score(self):
         p1_token = str(self.p1)
@@ -45,15 +59,21 @@ class TicTacToe(object):
 
     def run(self):
         score = self.score()
-        while score == 0:
+        print(self.board)
+        while score == 0 and self.board.has_move():
+            self.turn(p1)
             print(self.board)
-            row, col = self.turn(p1)
-            self.board.move(row, col, p1)
-            print(self.board)
+
             score = self.score()
-            row, col = self.turn(p2)
-            self.board.move(row, col, p2)
+            if score != 0:
+                break
+
+            if not self.board.has_move():
+                break
+
+            self.turn(p2)
             print(self.board)
+
             score = self.score()
         if score == -1:
             print("Player 1 wins!")
@@ -80,14 +100,21 @@ class Board(object):
         self.board_ = [self.EMPTY_SPACE for i in range(9)]
 
     def move(self, row, col, player):
-        assert(self.__move_count < 9)
-        assert(0 <= row < 3)
-        assert(0 <= col < 3)
+        if not self.validate(row, col):
+            return False
         idx = 3 * row + col
-        assert(0 <= idx < 9)
-        assert(self.board_[idx] == self.EMPTY_SPACE)
         self.board_[idx] = str(player)
         self.__move_count += 1
+        print(f'Move count: {self.__move_count}')
+        return True
+
+    def has_move(self):
+        return self.__move_count < 9
+
+    def validate(self, row, col):
+        idx = 3 * row + col
+        return self.has_move() and 0 <= row < 3 and 0 <= col < 3 \
+            and 0 <= idx < 9 and self.board_[idx] == self.EMPTY_SPACE
 
     def state(self, row, col):
         return self.board_[3*row + col]
