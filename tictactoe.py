@@ -6,6 +6,12 @@ class TicTacToe(object):
         self.p1 = p1
         self.p2 = p2
 
+    def turn(self, player):
+        print(f'Player {str(player)} turn.')
+        row = input('Enter row: ')
+        col = input('Enter col: ')
+        return int(row), int(col)
+
     def score(self):
         p1_token = str(self.p1)
         p2_token = str(self.p2)
@@ -38,7 +44,24 @@ class TicTacToe(object):
         return 0
 
     def run(self):
-        pass
+        score = self.score()
+        while score == 0:
+            print(self.board)
+            row, col = self.turn(p1)
+            self.board.move(row, col, p1)
+            print(self.board)
+            score = self.score()
+            row, col = self.turn(p2)
+            self.board.move(row, col, p2)
+            print(self.board)
+            score = self.score()
+        if score == -1:
+            print("Player 1 wins!")
+        elif score == 1:
+            print("Player 2 wins!")
+        else:
+            print("Draw.")
+
 
 class Player(object):
 
@@ -109,11 +132,6 @@ class Board(object):
 if __name__ == "__main__":
     p1 = Player(1)
     p2 = Player(2)
-
-
-    board = Board()
-    board.move(0,0,p1)
-    board.move(1,1,p2)
-    print(board)
-    print(board.state(0,0))
+    game = TicTacToe(p1, p2)
+    game.run()
 
