@@ -6,12 +6,14 @@ VALUE_FILE = './data/value.pickle'
 
 class TicTacToe(object):
 
-    def __init__(self, p1, p2, alpha=.9, epsilon=.1):
+    def __init__(self, p1, p2, alpha=.9, epsilon=.1, new=False):
         self.board = Board()
         self.p1 = p1
         self.p2 = p2
         self.epsilon = epsilon
         self.alpha = alpha
+        self.new = new
+        self.value_table = self.initValueFunction()
 
     def get_input(self, player):
         while True:
@@ -90,10 +92,10 @@ class TicTacToe(object):
         else:
             print("Draw.")
 
-    def initValueFunction(self, new=True):
+    def initValueFunction(self):
         #Attempt to read the states file
         value_table = {}
-        if new:
+        if self.new:
             with open(STATES_FILE) as states:
                 for board_state_str in states:
                     board_state_str = board_state_str[:-1]
@@ -118,13 +120,7 @@ class TicTacToe(object):
         with open(VALUE_FILE, 'wb') as handle:
             pickle.dump(self.value_table, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def initSimulation(self, new=True):
-        self.value_table = self.initValueFunction(new)
-        self.board = Board()
-
-    def simulate(self, new=True, num_games=2):
-        self.initSimulation(new)
-
+    def simulate(self, num_games=100):
         score = self.score()
         print(self.board)
         print(f'Score: {score}')
@@ -157,6 +153,7 @@ class TicTacToe(object):
                             next_action = action
                     if not next_action:
                         next_action = random.randint(0, len(actions) - 1)
+                        next_action = actions[next_action]
 
                     board_state_str = self.board.get_board_state_after_action(next_action, p1)
                     value_st1 = self.value_table[board_state_str]
@@ -166,6 +163,7 @@ class TicTacToe(object):
                     print('Random action.')
                     # Pick randomly between all actions
                     next_action = random.randint(0, len(actions) - 1)
+                    next_action = actions[next_action]
 
                 self.board.move_with_index(next_action, p1)
 
@@ -196,7 +194,12 @@ class TicTacToe(object):
             score = 0
             self.board = Board()
 
+        self.saveValueTable()
         print(f'wins: {wins} losses: {losses} draws: {draws}')
+
+    def printValueTable(self):
+        for k,v in self.value_table.items():
+            print(f'{k} {v}')
 
 class Player(object):
 
@@ -228,6 +231,7 @@ class Board(object):
 
     def move_with_index(self, i, player):
         self.board_[i] = str(player)
+        self.__move_count += 1
 
     def has_move(self):
         return self.__move_count < 9
@@ -296,6 +300,8 @@ class Board(object):
 if __name__ == "__main__":
     p1 = Player(1)
     p2 = Player(2)
-    game = TicTacToe(p1, p2, alpha=.1)
-    game.simulate()
+    game = TicTacToe(p1, p2, alpha=.9, epsilon=.3)
+    game.simulate(num_games=1000000)
+    #game.printValueTable()
+
 
