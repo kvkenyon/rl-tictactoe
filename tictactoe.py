@@ -1,3 +1,7 @@
+import pickle
+
+STATES_FILE = './data/states.dat'
+VALUE_FILE = './data/value.pickle'
 
 class TicTacToe(object):
 
@@ -61,7 +65,7 @@ class TicTacToe(object):
         score = self.score()
         print(self.board)
         while score == 0 and self.board.has_move():
-            self.turn(p1)
+            self.turn(self.p1)
             print(self.board)
 
             score = self.score()
@@ -71,7 +75,7 @@ class TicTacToe(object):
             if not self.board.has_move():
                 break
 
-            self.turn(p2)
+            self.turn(self.p2)
             print(self.board)
 
             score = self.score()
@@ -81,6 +85,34 @@ class TicTacToe(object):
             print("Player 2 wins!")
         else:
             print("Draw.")
+
+    def initValueFunction(self, new=True):
+        #Attempt to read the states file
+        value_table = {}
+        if new:
+            with open(STATES_FILE) as states:
+                for board_state_str in states:
+                    board_state_str = board_state_str[:-1]
+                    self.board = Board(board_state_str)
+                    score = self.score()
+                    # Since we are X
+                    value = 0.5
+                    if score == -1:
+                        value = 1.0
+                    elif score == 1:
+                        value = 0
+                    value_table[board_state_str] = value
+            with open(VALUE_FILE, 'wb') as handle:
+                pickle.dump(value_table, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        else:
+            # Read from value file and store in dict
+            with open(VALUE_FILE, 'rb') as handle:
+                value_table = pickle.load(handle)
+        return value_table
+
+    def initSimulation(self, new=True):
+        self.value_table = self.initValueFunction(new)
+        print(self.value_table)
 
 
 class Player(object):
@@ -95,9 +127,12 @@ class Player(object):
 class Board(object):
     EMPTY_SPACE = '-'
 
-    def __init__(self):
+    def __init__(self, board_str=None):
         self.__move_count = 0
-        self.board_ = [self.EMPTY_SPACE for i in range(9)]
+        if board_str:
+            self.board_ = self.parse_board_str(board_str)
+        else:
+            self.board_ = [self.EMPTY_SPACE for i in range(9)]
 
     def move(self, row, col, player):
         if not self.validate(row, col):
@@ -120,16 +155,10 @@ class Board(object):
         return self.board_[3*row + col]
 
     def get_row(self, row):
-        # 0 1 2
-        # 3 4 5
-        # 6 7 8
         r = 3*row
         return ''.join(self.board_[r:r+3])
 
     def get_col(self, col):
-        # 0 1 2
-        # 3 4 5
-        # 6 7 8
         if col == 0:
             return self.board_[0] + self.board_[3] + self.board_[6]
         elif col == 1:
@@ -138,14 +167,28 @@ class Board(object):
             return self.board_[2] + self.board_[5] + self.board_[8]
 
     def get_diag(self, diag):
-        # 0 1 2
-        # 3 4 5
-        # 6 7 8
         if diag == 0:
             return self.board_[0] + self.board_[4] + self.board_[8]
         else:
             return self.board_[2] + self.board_[4] + self.board_[6]
 
+    def generate_all_board_states(self, idx):
+        """
+        Used only to generate a file once
+        """
+        if idx == 9:
+            print(self.get_board_state_str())
+            return
+
+        for token in [self.EMPTY_SPACE, 'X' , 'O']:
+            self.board_[idx] = token
+            self.generate_all_board_states(idx + 1)
+
+    def get_board_state_str(self):
+        return ''.join(self.board_)
+
+    def parse_board_str(self, board_str):
+        return [s for s in board_str]
 
     def __str__(self):
         result = ''
@@ -160,5 +203,5 @@ if __name__ == "__main__":
     p1 = Player(1)
     p2 = Player(2)
     game = TicTacToe(p1, p2)
-    game.run()
+    game.initSimulation()
 
